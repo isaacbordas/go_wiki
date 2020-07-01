@@ -5,6 +5,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+)
+
+const (
+	PagePath string = "../res/pages/"
+	PageViewRoute string = "/view/"
 )
 
 type Page struct {
@@ -13,12 +19,12 @@ type Page struct {
 }
 
 func (p *Page) save() error {
-	filename := p.Title + ".txt"
+	filename := p.Title
 	return ioutil.WriteFile(filename, p.Body, 0600)
 }
 
 func loadPage(title string) (*Page, error) {
-	filename := "../res/pages/" + title + ".txt"
+	filename := getWorkingDir() + PagePath + title
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -26,13 +32,18 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
-func main()  {
-	http.HandleFunc("/view/", viewHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
 func viewHandler(w http.ResponseWriter, r *http.Request)  {
-	title := r.URL.Path[len("/view/"):]
+	title := r.URL.Path[len(PageViewRoute):]
 	p, _ := loadPage(title)
 	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
+}
+
+func getWorkingDir() string {
+	path, _ := os.Getwd()
+	return path + "/"
+}
+
+func main()  {
+	http.HandleFunc(PageViewRoute, viewHandler)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
