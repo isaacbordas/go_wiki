@@ -20,6 +20,8 @@ type Page struct {
 	Body []byte
 }
 
+var templates = template.Must(template.ParseFiles(PagePath + "edit.html", PagePath + "view.html"))
+
 func (p *Page) save() error {
 	filename := PagePath + p.Title
 	return ioutil.WriteFile(filename, p.Body, 0600)
@@ -65,14 +67,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	t, err := template.ParseFiles(PagePath + tmpl + ".html")
+	err := templates.ExecuteTemplate(w, PagePath + tmpl + ".html", p)
 	if err != nil {
 		sendHttpError(w, err)
 		return
-	}
-	err = t.Execute(w, p)
-	if err != nil {
-		sendHttpError(w, err)
 	}
 }
 
