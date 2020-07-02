@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -12,6 +11,7 @@ import (
 
 const (
 	PagePath string = "../res/pages/"
+	PageHomeRoute string = "/Home"
 	PageViewRoute string = "/view/"
 	PageEditRoute string = "/edit/"
 	PageSaveRoute string = "/save/"
@@ -43,7 +43,8 @@ func loadPage(title string) (*Page, error) {
 func viewHandler(w http.ResponseWriter, r *http.Request, title string)  {
 	p, err := loadPage(title)
 	if err != nil {
-		http.ServeFile(w, r, PagePath + "NotFound")
+		http.NotFound(w, r)
+		return
 	}
 	renderTemplate(w, "view", p)
 }
@@ -90,21 +91,13 @@ func sendHttpError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
-	m := validPath.FindStringSubmatch(r.URL.Path)
-	if m == nil {
-		http.NotFound(w, r)
-		return "", errors.New("invalid Page Title")
-	}
-	return m[2], nil
-}
-
 func getWorkingDir() string {
 	path, _ := os.Getwd()
 	return path + "/"
 }
 
 func main()  {
+	http.HandleFunc(PageHomeRoute, makeHandler(viewHandler))
 	http.HandleFunc(PageViewRoute, makeHandler(viewHandler))
 	http.HandleFunc(PageEditRoute, makeHandler(editHandler))
 	http.HandleFunc(PageSaveRoute, makeHandler(saveHandler))
