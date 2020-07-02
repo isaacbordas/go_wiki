@@ -1,17 +1,18 @@
 package main
 
 import (
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"html/template"
 )
 
 const (
 	PagePath string = "../res/pages/"
 	PageViewRoute string = "/view/"
 	PageEditRoute string = "/edit/"
+	PageSaveRoute string = "/save/"
 )
 
 type Page struct {
@@ -20,7 +21,7 @@ type Page struct {
 }
 
 func (p *Page) save() error {
-	filename := p.Title
+	filename := PagePath + p.Title
 	return ioutil.WriteFile(filename, p.Body, 0600)
 }
 
@@ -51,9 +52,32 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "edit", p)
 }
 
+func saveHandler(w http.ResponseWriter, r *http.Request) {
+	title := r.URL.Path[len(PageSaveRoute):]
+	body := r.FormValue("body")
+	p := &Page{Title: title, Body: []byte(body)}
+	err := p.save()
+	if err != nil {
+		sendHttpError(w, err)
+		return
+	}
+	http.Redirect(w, r, PageViewRoute + title, http.StatusFound)
+}
+
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	t, _ := template.ParseFiles(PagePath + tmpl + ".html")
-	t.Execute(w, p)
+	t, err := template.ParseFiles(PagePath + tmpl + ".html")
+	if err != nil {
+		sendHttpError(w, err)
+		return
+	}
+	err = t.Execute(w, p)
+	if err != nil {
+		sendHttpError(w, err)
+	}
+}
+
+func sendHttpError(w http.ResponseWriter, err error) {
+	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
 func getWorkingDir() string {
@@ -64,5 +88,6 @@ func getWorkingDir() string {
 func main()  {
 	http.HandleFunc(PageViewRoute, viewHandler)
 	http.HandleFunc(PageEditRoute, editHandler)
+	http.HandleFunc(PageSaveRoute, saveHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
