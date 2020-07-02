@@ -11,7 +11,6 @@ import (
 
 const (
 	PagePath string = "../res/pages/"
-	PageHomeRoute string = "/Home"
 	PageViewRoute string = "/view/"
 	PageEditRoute string = "/edit/"
 	PageSaveRoute string = "/save/"
@@ -43,7 +42,7 @@ func loadPage(title string) (*Page, error) {
 func viewHandler(w http.ResponseWriter, r *http.Request, title string)  {
 	p, err := loadPage(title)
 	if err != nil {
-		http.NotFound(w, r)
+		http.Redirect(w, r, PageEditRoute + title, http.StatusFound)
 		return
 	}
 	renderTemplate(w, "view", p)
@@ -97,7 +96,6 @@ func getWorkingDir() string {
 }
 
 func main()  {
-	http.HandleFunc(PageHomeRoute, makeHandler(viewHandler))
 	http.HandleFunc(PageViewRoute, makeHandler(viewHandler))
 	http.HandleFunc(PageEditRoute, makeHandler(editHandler))
 	http.HandleFunc(PageSaveRoute, makeHandler(saveHandler))
