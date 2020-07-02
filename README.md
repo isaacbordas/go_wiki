@@ -7,4 +7,4 @@ Compile **go build wiki.go** on src directory
 
 Execute **./wiki**
 
-Visit http://localhost:8080/view/TestPage
+Visit http://localhost:8080/view/Home
