@@ -1,16 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"html/template"
 )
 
 const (
 	PagePath string = "../res/pages/"
 	PageViewRoute string = "/view/"
+	PageEditRoute string = "/edit/"
 )
 
 type Page struct {
@@ -34,8 +35,25 @@ func loadPage(title string) (*Page, error) {
 
 func viewHandler(w http.ResponseWriter, r *http.Request)  {
 	title := r.URL.Path[len(PageViewRoute):]
-	p, _ := loadPage(title)
-	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
+	p, err := loadPage(title)
+	if err != nil {
+		http.ServeFile(w, r, PagePath + "NotFound")
+	}
+	renderTemplate(w, "view", p)
+}
+
+func editHandler(w http.ResponseWriter, r *http.Request) {
+	title := r.URL.Path[len(PageEditRoute):]
+	p, err := loadPage(title)
+	if err != nil {
+		p = &Page{Title: title}
+	}
+	renderTemplate(w, "edit", p)
+}
+
+func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
+	t, _ := template.ParseFiles(PagePath + tmpl + ".html")
+	t.Execute(w, p)
 }
 
 func getWorkingDir() string {
@@ -45,5 +63,6 @@ func getWorkingDir() string {
 
 func main()  {
 	http.HandleFunc(PageViewRoute, viewHandler)
+	http.HandleFunc(PageEditRoute, editHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
